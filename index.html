@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Masterpiece</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #e6f0fa 0%, #f7f9fc 100%);
+      color: #2d3748;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container {
+      background: #ffffff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+      max-width: 700px;
+      width: 100%;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .container:hover {
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #1a202c;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+    .section {
+      margin-bottom: 2rem;
+    }
+    .hidden {
+      display: none;
+    }
+    .button {
+      background: #3182ce;
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background 0.3s ease, transform 0.2s ease;
+      margin: 0.5rem;
+    }
+    .button:hover {
+      background: #2b6cb0;
+      transform: translateY(-2px);
+    }
+    .button:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+    .file-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .checkbox-group {
+      display: flex;
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .quiz-question {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .option {
+      padding: 0.75rem;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .option:hover {
+      background: #edf2f7;
+      border-color: #cbd5e0;
+    }
+    .selected {
+      background: #bee3f8;
+      border-color: #3182ce;
+    }
+    .correct {
+      background: #c6f6d5;
+      border-color: #38a169;
+    }
+    .incorrect {
+      background: #fed7d7;
+      border-color: #e53e3e;
+    }
+    .feedback {
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid;
+      opacity: 0.9;
+    }
+    .feedback.correct {
+      background: #e6fffa;
+      color: #2f855a;
+      border-color: #2f855a;
+    }
+    .feedback.incorrect {
+      background: #fff5f5;
+      color: #c53030;
+      border-color: #c53030;
+    }
+    .progress-container {
+      margin-bottom: 1rem;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #3182ce;
+      transition: width 0.3s ease;
+    }
+    .timer {
+      text-align: center;
+      font-size: 1rem;
+      color: #4a5568;
+      margin-bottom: 1rem;
+    }
+    .results {
+      text-align: center;
+      font-size: 1.1rem;
+    }
+    .review-section {
+      margin-top: 1.5rem;
+    }
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    .review-table th, .review-table td {
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    .review-table th {
+      background: #f7fafc;
+      font-weight: 600;
+    }
+    .review-question {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .review-question-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+    .review-details {
+      margin-top: 0.5rem;
+      padding-left: 1.5rem;
+      display: none;
+    }
+    .review-details.show {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .button {
+        padding: 0.5rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Quiz Masterpiece</h1>
+    
+    <!-- Upload Section -->
+    <div id="upload-section" class="section">
+      <div class="upload-section">
+        <div class="file-input">
+          <label for="questions-file">Savollar faylini yuklang:</label>
+          <input type="file" id="questions-file" accept=".txt">
+        </div>
+        <div class="file-input">
+          <label for="answers-file">Javoblar faylini yuklang:</label>
+          <input type="file" id="answers-file" accept=".txt">
+        </div>
+        <div class="checkbox-group">
+          <label><input type="checkbox" id="shuffle-questions"> Savollarni aralashtirish</label>
+          <label><input type="checkbox" id="shuffle-answers"> Javoblarni aralashtirish</label>
+        </div>
+      </div>
+      <button id="start-quiz" class="button">Testni boshlash</button>
+    </div>
+    
+    <!-- Quiz Section -->
+    <div id="quiz-section" class="section hidden">
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <div class="timer" id="timer">Vaqt: 0:00</div>
+      <div id="question-container"></div>
+      <button id="next-button" class="button">Keyingi</button>
+    </div>
+    
+    <!-- Results Section -->
+    <div id="results-section" class="section hidden">
+      <div class="results">
+        <h2>Test yakunlandi!</h2>
+        <p id="score"></p>
+        <p id="time-taken"></p>
+      </div>
+      <div class="review-section">
+        <h3>Natijalarni ko‘rish</h3>
+        <table class="review-table">
+          <thead>
+            <tr>
+              <th>Savol</th>
+              <th>Sizning javob</th>
+              <th>To‘g‘ri javob</th>
+              <th>Natija</th>
+            </tr>
+          </thead>
+          <tbody id="review-table-body"></tbody>
+        </table>
+        <div id="review-container"></div>
+      </div>
+      <div>
+        <button id="restart-quiz" class="button">Qayta boshlash</button>
+        <button id="retake-wrong" class="button" title="Xato javoblar bo‘lmasa, bu tugma faol bo‘lmaydi">Xato javoblarni qayta ishlash</button>
+        <button id="review-wrong" class="button">Xato javoblarni ko‘rish</button>
+        <button id="new-quiz" class="button">Yangi test</button>
+      </div>
+    </div>
+    
+    <!-- Wrong Answers Review Section -->
+    <div id="wrong-answers-section" class="section hidden">
+      <h2>Xato javoblar</h2>
+      <div id="wrong-review-container"></div>
+      <button id="back-to-results" class="button">Natijalarga qaytish</button>
+    </div>
+  </div>
+  
+  <script>
+    let questions = [];
+    let answers = [];
+    let displayOrder = [];
+    let answerOrder = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
+    let originalQuestions = [];
+    let originalAnswers = [];
+    let originalDisplayOrder = [];
+    let originalAnswerOrder = [];
+    let originalUserAnswers = [];
+    let timer;
+    let startTime;
+    let isRetakeMode = false;
+    
+    const uploadSection = document.getElementById('upload-section');
+    const quizSection = document.getElementById('quiz-section');
+    const resultsSection = document.getElementById('results-section');
+    const wrongAnswersSection = document.getElementById('wrong-answers-section');
+    const questionContainer = document.getElementById('question-container');
+    const nextButton = document.getElementById('next-button');
+    const timerElement = document.getElementById('timer');
+    const scoreElement = document.getElementById('score');
+    const timeTakenElement = document.getElementById('time-taken');
+    const reviewContainer = document.getElementById('review-container');
+    const reviewTableBody = document.getElementById('review-table-body');
+    const wrongReviewContainer = document.getElementById('wrong-review-container');
+    const retakeWrongButton = document.getElementById('retake-wrong');
+    const progressFill = document.getElementById('progress-fill');
+    
+    document.getElementById('start-quiz').addEventListener('click', startQuiz);
+    nextButton.addEventListener('click', nextQuestion);
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !quizSection.classList.contains('hidden')) {
+        e.preventDefault();
+        nextQuestion();
+      }
+    });
+    document.getElementById('restart-quiz').addEventListener('click', restartQuiz);
+    document.getElementById('retake-wrong').addEventListener('click', retakeWrongQuiz);
+    document.getElementById('review-wrong').addEventListener('click', reviewWrongAnswers);
+    document.getElementById('new-quiz').addEventListener('click', newQuiz);
+    document.getElementById('back-to-results').addEventListener('click', backToResults);
+    
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    
+    function parseQuestions(text) {
+      const questionBlocks = text.split(/\d+\.\s/).filter(Boolean);
+      return questionBlocks.map(block => {
+        const lines = block.trim().split('\n');
+        const question = lines[0];
+        const options = lines.slice(1).map(line => line.trim());
+        return { question, options };
+      });
+    }
+    
+    function parseAnswers(text) {
+      return text.split('\n').map(line => line.trim().toUpperCase());
+    }
+    
+    function startQuiz() {
+      const questionsFile = document.getElementById('questions-file').files[0];
+      const answersFile = document.getElementById('answers-file').files[0];
+      const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+      const shuffleAnswers = document.getElementById('shuffle-answers').checked;
+      
+      if (!questionsFile || !answersFile) {
+        alert('Iltimos, savollar va javoblar fayllarini yuklang.');
+        return;
+      }
+      
+      const questionsReader = new FileReader();
+      questionsReader.onload = function(e) {
+        const questionsText = e.target.result;
+        questions = parseQuestions(questionsText);
+        
+        const answersReader = new FileReader();
+        answersReader.onload = function(e) {
+          const answersText = e.target.result;
+          answers = parseAnswers(answersText);
+          
+          if (questions.length !== answers.length) {
+            alert('Savollar va javoblar soni mos kelmaydi.');
+            return;
+          }
+          
+          // Store original quiz data
+          originalQuestions = [...questions];
+          originalAnswers = [...answers];
+          
+          // Initialize display order
+          displayOrder = Array.from({ length: questions.length }, (_, i) => i);
+          if (shuffleQuestions) {
+            displayOrder = shuffle([...displayOrder]);
+          }
+          
+          // Initialize answer order for each question
+          answerOrder = questions.map(() => [0, 1, 2, 3]);
+          if (shuffleAnswers) {
+            answerOrder = answerOrder.map(order => shuffle([...order]));
+          }
+          
+          // Store original orders for review
+          originalDisplayOrder = [...displayOrder];
+          originalAnswerOrder = [...answerOrder];
+          
+          currentQuestionIndex = 0;
+          userAnswers = [];
+          isRetakeMode = false;
+          uploadSection.classList.add('hidden');
+          quizSection.classList.remove('hidden');
+          startTime = new Date();
+          timer = setInterval(updateTimer, 1000);
+          updateProgress();
+          displayQuestion();
+        };
+        answersReader.readAsText(answersFile);
+      };
+      questionsReader.readAsText(questionsFile);
+    }
+    
+    function updateProgress() {
+      const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+      progressFill.style.width = `${progress}%`;
+    }
+    
+    function displayQuestion() {
+      const index = displayOrder[currentQuestionIndex];
+      const question = questions[index];
+      const options = answerOrder[index].map(i => question.options[i]);
+      
+      questionContainer.innerHTML = `
+        <div class="quiz-question">${currentQuestionIndex + 1}. ${question.question}</div>
+        <div class="options">
+          ${options.map((option, i) => `
+            <div class="option" data-index="${i}">${option}</div>
+          `).join('')}
+        </div>
+        <div class="feedback hidden"></div>
+      `;
+      
+      const optionsElements = document.querySelectorAll('.option');
+      optionsElements.forEach(option => {
+        option.addEventListener('click', selectAnswer);
+      });
+      updateProgress();
+    }
+    
+    function selectAnswer(e) {
+      const selectedOption = e.target;
+      const selectedIndex = parseInt(selectedOption.dataset.index);
+      const index = displayOrder[currentQuestionIndex];
+      const currentQuestion = questions[index];
+      const correctAnswer = answers[index];
+      const correctIndex = answerOrder[index].indexOf(correctAnswer.charCodeAt(0) - 65);
+      
+      userAnswers[index] = answerOrder[index][selectedIndex];
+      
+      const options = document.querySelectorAll('.option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+        option.removeEventListener('click', selectAnswer);
+      });
+      selectedOption.classList.add('selected');
+      
+      const feedback = document.querySelector('.feedback');
+      if (selectedIndex === correctIndex) {
+        feedback.textContent = 'To‘g‘ri!';
+        feedback.classList.add('correct');
+        // Trigger confetti animation
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#3182ce', '#38a169', '#f6ad55', '#ed64a6'],
+          disableForReducedMotion: true
+        });
+        setTimeout(() => confetti.reset(), 1000);
+      } else {
+        feedback.textContent = `Noto‘g‘ri! To‘g‘ri javob: ${currentQuestion.options[correctAnswer.charCodeAt(0) - 65]}`;
+        feedback.classList.add('incorrect');
+      }
+      feedback.classList.remove('hidden');
+    }
+    
+    function nextQuestion() {
+      const index = displayOrder[currentQuestionIndex];
+      if (userAnswers[index] === undefined) {
+        alert('Iltimos, javobni tanlang.');
+        return;
+      }
+      
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        displayQuestion();
+      } else {
+        endQuiz();
+      }
+    }
+    
+    function endQuiz() {
+      clearInterval(timer);
+      const endTime = new Date();
+      const timeTaken = Math.round((endTime - startTime) / 1000);
+      const correctCount = userAnswers.filter((answer, index) => {
+        const correctIndex = answers[index].charCodeAt(0) - 65;
+        return answer === correctIndex;
+      }).length;
+      const incorrectCount = questions.length - correctCount;
+      
+      scoreElement.textContent = `To‘g‘ri: ${correctCount} | Noto‘g‘ri: ${incorrectCount}`;
+      timeTakenElement.textContent = `Sarflangan vaqt: ${formatTime(timeTaken)}`;
+      
+      // Enable/disable retake button
+      retakeWrongButton.disabled = incorrectCount === 0;
+      
+      // Store original user answers for review
+      if (!isRetakeMode) {
+        originalUserAnswers = [...userAnswers];
+      }
+      
+      displayReview();
+      
+      quizSection.classList.add('hidden');
+      resultsSection.classList.remove('hidden');
+    }
+    
+    function displayReview() {
+      const reviewQuestions = isRetakeMode ? originalQuestions : questions;
+      const reviewAnswers = isRetakeMode ? originalAnswers : answers;
+      const reviewDisplayOrder = isRetakeMode ? originalDisplayOrder : displayOrder;
+      const reviewUserAnswers = isRetakeMode ? originalUserAnswers : userAnswers;
+      
+      reviewTableBody.innerHTML = reviewDisplayOrder.map((index, i) => {
+        const question = reviewQuestions[index];
+        const correctIndex = reviewAnswers[index].charCodeAt(0) - 65;
+        const userAnswer = reviewUserAnswers[index];
+        const isCorrect = userAnswer === correctIndex;
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${question.options[userAnswer] || 'Javob berilmadi'}</td>
+            <td>${question.options[correctIndex]}</td>
+            <td>${isCorrect ? '✔️ To‘g‘ri' : '❌ Noto‘g‘ri'}</td>
+          </tr>
+        `;
+      }).join('');
+      
+      reviewContainer.innerHTML = reviewDisplayOrder.map((index, i) => {
+        const question = reviewQuestions[index];
+        const correctIndex = reviewAnswers[index].charCodeAt(0) - 65;
+        const userAnswer = reviewUserAnswers[index];
+        const isCorrect = userAnswer === correctIndex;
+        return `
+          <div class="review-question">
+            <div class="review-question-header">
+              <span>${isCorrect ? '✔️' : '❌'}</span>
+              <span>${i + 1}. ${question.question}</span>
+            </div>
+            <div class="review-details">
+              <p>To‘g‘ri javob: ${question.options[correctIndex]}</p>
+              <p>Sizning javobingiz: ${question.options[userAnswer] || 'Javob berilmadi'} ${isCorrect ? '(To‘g‘ri)' : '(Noto‘g‘ri)'}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      const reviewQuestionsElements = document.querySelectorAll('.review-question-header');
+      reviewQuestionsElements.forEach(header => {
+        header.addEventListener('click', () => {
+          const details = header.nextElementSibling;
+          details.classList.toggle('show');
+        });
+      });
+    }
+    
+    function retakeWrongQuiz() {
+      const wrongIndices = originalDisplayOrder.filter((index) => {
+        const correctIndex = originalAnswers[index].charCodeAt(0) - 65;
+        return originalUserAnswers[index] !== correctIndex;
+      });
+      
+      if (wrongIndices.length === 0) return;
+      
+      // Filter questions and answers to only those answered incorrectly
+      questions = wrongIndices.map(i => originalQuestions[i]);
+      answers = wrongIndices.map(i => originalAnswers[i]);
+      
+      const shuffleQuestions = document.getElementById('shuffle-questions').checked;
+      const shuffleAnswers = document.getElementById('shuffle-answers').checked;
+      
+      // Initialize new display order for wrong questions
+      displayOrder = Array.from({ length: questions.length }, (_, i) => i);
+      if (shuffleQuestions) {
+        displayOrder = shuffle([...displayOrder]);
+      }
+      
+      // Initialize new answer order
+      answerOrder = questions.map(() => [0, 1, 2, 3]);
+      if (shuffleAnswers) {
+        answerOrder = answerOrder.map(order => shuffle([...order]));
+      }
+      
+      currentQuestionIndex = 0;
+      userAnswers = [];
+      isRetakeMode = true;
+      
+      resultsSection.classList.add('hidden');
+      quizSection.classList.remove('hidden');
+      startTime = new Date();
+      timer = setInterval(updateTimer, 1000);
+      updateProgress();
+      displayQuestion();
+    }
+    
+    function reviewWrongAnswers() {
+      const wrongIndices = (isRetakeMode ? originalDisplayOrder : displayOrder).filter((index) => {
+        const correctIndex = (isRetakeMode ? originalAnswers : answers)[index].charCodeAt(0) - 65;
+        return (isRetakeMode ? originalUserAnswers : userAnswers)[index] !== correctIndex;
+      });
+      
+      wrongReviewContainer.innerHTML = wrongIndices.map((index, i) => {
+        const question = (isRetakeMode ? originalQuestions : questions)[index];
+        const correctIndex = (isRetakeMode ? originalAnswers : answers)[index].charCodeAt(0) - 65;
+        const userAnswer = (isRetakeMode ? originalUserAnswers : userAnswers)[index];
+        return `
+          <div class="review-question">
+            <div class="review-question-header">
+              <span>❌</span>
+              <span>${(isRetakeMode ? originalDisplayOrder : displayOrder).indexOf(index) + 1}. ${question.question}</span>
+            </div>
+            <div class="review-details show">
+              <p>To‘g‘ri javob: ${question.options[correctIndex]}</p>
+              <p>Sizning javobingiz: ${question.options[userAnswer] || 'Javob berilmadi'} (Noto‘g‘ri)</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      resultsSection.classList.add('hidden');
+      wrongAnswersSection.classList.remove('hidden');
+    }
+    
+    function backToResults() {
+      wrongAnswersSection.classList.add('hidden');
+      resultsSection.classList.remove('hidden');
+    }
+    
+    function restartQuiz() {
+      currentQuestionIndex = 0;
+      userAnswers = [];
+      if (isRetakeMode) {
+        questions = [...originalQuestions];
+        answers = [...originalAnswers];
+        displayOrder = [...originalDisplayOrder];
+        answerOrder = [...originalAnswerOrder];
+        isRetakeMode = false;
+      }
+      resultsSection.classList.add('hidden');
+      quizSection.classList.remove('hidden');
+      startTime = new Date();
+      timer = setInterval(updateTimer, 1000);
+      updateProgress();
+      displayQuestion();
+    }
+    
+    function newQuiz() {
+      questions = [];
+      answers = [];
+      displayOrder = [];
+      answerOrder = [];
+      originalQuestions = [];
+      originalAnswers = [];
+      originalDisplayOrder = [];
+      originalAnswerOrder = [];
+      originalUserAnswers = [];
+      currentQuestionIndex = 0;
+      userAnswers = [];
+      isRetakeMode = false;
+      clearInterval(timer);
+      timerElement.textContent = 'Vaqt: 0:00';
+      document.getElementById('questions-file').value = '';
+      document.getElementById('answers-file').value = '';
+      document.getElementById('shuffle-questions').checked = false;
+      document.getElementById('shuffle-answers').checked = false;
+      resultsSection.classList.add('hidden');
+      uploadSection.classList.remove('hidden');
+    }
+    
+    function updateTimer() {
+      const currentTime = new Date();
+      const timeElapsed = Math.round((currentTime - startTime) / 1000);
+      timerElement.textContent = `Vaqt: ${formatTime(timeElapsed)}`;
+    }
+    
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+  </script>
+</body>
+</html>
